@@ -61,7 +61,8 @@ npx expo install @react-native-google-signin/google-signin
 		  }
 		}
 	  ],
-	  "@react-native-google-signin/google-signin"
+	  "@react-native-google-signin/google-signin",
+	  "expo-web-browser"
 	],
 	"experiments": {
 	  "typedRoutes": true,
@@ -70,24 +71,38 @@ npx expo install @react-native-google-signin/google-signin
   }
 }
 ```
-12. `src/hooks/useGoogleAuth.ts`
+12. `src/hooks/use-google-auth.ts`
 ```typescript
-// hooks/useGoogleAuth.ts
-import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
+import { Platform } from 'react-native';
 import { supabase } from '@/lib/supabase';
 
 if (!process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID) {
   throw new Error('Missing EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID in .env');
 }
 
-GoogleSignin.configure({
-  webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
-  offlineAccess: false,
-});
-
 export function useGoogleAuth() {
   const signIn = async (): Promise<void> => {
     try {
+      if (Platform.OS === 'web') {
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: window.location.origin,
+          },
+        });
+        if (error) throw error;
+        return;
+      }
+
+      const { GoogleSignin, statusCodes } = await import(
+        '@react-native-google-signin/google-signin'
+      );
+
+      GoogleSignin.configure({
+        webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+        offlineAccess: false,
+      });
+
       await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
       const response = await GoogleSignin.signIn();
       const idToken = response.data?.idToken;
@@ -103,20 +118,26 @@ export function useGoogleAuth() {
 
       console.log('Signed in:', data.user?.email);
     } catch (error: any) {
-      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
-        console.log('Cancelled');
-      } else if (error.code === statusCodes.IN_PROGRESS) {
-        console.log('Already in progress');
-      } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-        console.log('Play Services unavailable');
-      } else {
-        console.error('Sign-in error:', error);
+      if (Platform.OS !== 'web' && error.code) {
+        const { statusCodes } = await import('@react-native-google-signin/google-signin');
+        if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+          console.log('Cancelled');
+          return;
+        }
+        if (error.code === statusCodes.IN_PROGRESS) {
+          console.log('Already in progress');
+          return;
+        }
+        if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+          console.log('Play Services unavailable');
+          return;
+        }
       }
+      console.error('Sign-in error:', error);
     }
   };
 
   const signOut = async (): Promise<void> => {
-    await GoogleSignin.signOut();
     await supabase.auth.signOut();
   };
 
@@ -199,7 +220,7 @@ export default function TabLayout() {
   return <AppTabs />;
 }
 ```
-17. Run `npm install @supabase/supabase-js` and create `src/lib/supabase.ts`
+17. The `@supabase/supabase-js` dependency is already in `package.json`. Create `src/lib/supabase.ts`:
 ```typescript
 import { createClient } from '@supabase/supabase-js';
 
@@ -216,11 +237,11 @@ if (!supabaseAnonKey) {
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 ```
 18. `.env`
-```
-EXPO_PUBLIC_API_URL=http://localhost:8081
+```env
+# Google (from GCP Console > APIs & Services > Credentials > Web OAuth client)
 EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=
-GOOGLE_WEB_CLIENT_SECRET=
-GOOGLE_ANDROID_CLIENT_ID=
+
+# Supabase (from Project Settings > API)
 EXPO_PUBLIC_SUPABASE_URL=
 EXPO_PUBLIC_SUPABASE_ANON_KEY=
 ```
@@ -293,17 +314,6 @@ This requires Supabase to be set up:
 
 Platform-specific file resolution (`.native.tsx` vs `.tsx`) ensures `expo-symbols` is never bundled for web.
 
-## Env File
-
-```env
-# Google (from GCP Console > APIs & Services > Credentials > Web OAuth client)
-EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=xxxxxxxxxx.apps.googleusercontent.com
-
-# Supabase (from Project Settings > API)
-EXPO_PUBLIC_SUPABASE_URL=https://xxxxxxxxxxxx.supabase.co
-EXPO_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOi...
-```
-
 ## Rebuild Required
 
 Env vars are inlined at build time by Metro. After changing `.env`, rebuild:
@@ -317,7 +327,6 @@ npx expo run:android   # or EAS Build
 | File                                | Change                                                                   |
 | ----------------------------------- | ------------------------------------------------------------------------ |
 | `package.json`                      | Removed `@expo/ui`, `expo-glass-effect`                                  |
-| `.env.example`                      | Updated with Supabase + Google env vars                                  |
 | `src/lib/supabase.ts`               | **New** — Supabase client                                                |
 | `src/hooks/use-google-auth.ts`      | Platform-aware auth (native GoogleSignin + Supabase, web Supabase OAuth) |
 | `src/components/icon.tsx`           | **New** — web text icon fallback                                         |
