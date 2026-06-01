@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "charge-discovery",
-    "slug": "charge-discovery",
+    "name": "FindCharge",
+    "slug": "find-charge",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -17,7 +17,9 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.anonymous.chargediscovery",
+      "name": "FindCharge"
     },
     "web": {
       "output": "static",
@@ -34,7 +36,9 @@
             "imageWidth": 76
           }
         }
-      ]
+      ],
+      "@react-native-google-signin/google-signin",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,

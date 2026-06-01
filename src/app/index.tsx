@@ -8,6 +8,8 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { WebBadge } from '@/components/web-badge';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { Link } from 'expo-router';
+import { TouchableOpacity } from 'react-native';
 
 function getDevMenuHint() {
   if (Platform.OS === 'web') {
@@ -53,6 +55,11 @@ export default function HomeScreen() {
             title="Fresh start"
             hint={<ThemedText type="code">npm run reset-project</ThemedText>}
           />
+          <Link href="/(auth)/login" asChild>
+            <TouchableOpacity style={styles.button}>
+              <ThemedText style={styles.buttonText}>Go to Login</ThemedText>
+            </TouchableOpacity>
+          </Link>
         </ThemedView>
 
         {Platform.OS === 'web' && <WebBadge />}
@@ -94,5 +101,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.four,
     borderRadius: Spacing.four,
+  },
+  button: {
+    backgroundColor: '#4285F4',
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 8,
+  },
+  buttonText: {
+    color: '#fff',
+    fontWeight: '600',
   },
 });
