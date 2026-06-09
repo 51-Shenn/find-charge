@@ -38,7 +38,20 @@
         }
       ],
       "@react-native-google-signin/google-signin",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "@maplibre/maplibre-react-native",
+        {
+          "enableAndroid": true
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow FindCharge to use your location to find nearby charging stations.",
+          "locationWhenInUsePermission": "Allow FindCharge to use your location to find nearby charging stations."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

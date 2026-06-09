@@ -19,7 +19,7 @@ export function useGoogleAuth() {
         return;
       }
 
-      const { GoogleSignin, statusCodes } = await import(
+      const { GoogleSignin } = await import(
         '@react-native-google-signin/google-signin'
       );
 

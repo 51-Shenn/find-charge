@@ -1,19 +1,18 @@
-import { useEffect, useState } from 'react';
+import { useSyncExternalStore } from 'react';
 import { useColorScheme as useRNColorScheme } from 'react-native';
 
-/**
- * To support static rendering, this value needs to be re-calculated on the client side for web
- */
-export function useColorScheme() {
-  const [hasHydrated, setHasHydrated] = useState(false);
+function noop() { return () => {}; }
 
-  useEffect(() => {
-    setHasHydrated(true);
-  }, []);
+export function useColorScheme() {
+  const isHydrated = useSyncExternalStore(
+    noop,
+    () => true,
+    () => false
+  );
 
   const colorScheme = useRNColorScheme();
 
-  if (hasHydrated) {
+  if (isHydrated) {
     return colorScheme;
   }
 
